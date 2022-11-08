@@ -10,3 +10,12 @@ gem 'rake', '~> 13.0'
 gem 'rspec', '~> 3.0'
 
 gem 'rubocop', '~> 1.21'
+
+gem 'rails', '7.0.4'
+
+gem 'actionpack', '7.0.4'
+gem 'actionview', '7.0.4'
+gem 'activesupport', '7.0.4'
+
+gem 'rack', '>= 2.2.3.1'
+gem 'rails-html-sanitizer', '>= 1.4.3'
