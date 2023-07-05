@@ -40,13 +40,13 @@ Create initializer file at config/initializer/buuurst_dev.rb and write bellow co
 - project_id
     - used for identifying loadtest target app
 - service_key
-    - used for identifying request user, get at [account info page in BUUURST.DEV BETA](https://buuurst.dev/accounts) 
+    - used for identifying request user, get at [account info page in BUUURST.DEV BETA](https://buuurst.dev/accounts)
 - put_log_url (optional)
     - used for changing put log destination url
-- cunstom_header (optional)
+- custom_header (optional)
     - used for logging header contents
 - ignore_paths (optional)
-    - ignore sending request log when request path is in ignore_paths 
+    - ignore sending request log when request path is in ignore_paths
 
 
 ## Contributing
