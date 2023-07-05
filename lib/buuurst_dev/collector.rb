@@ -61,15 +61,17 @@ module BuuurstDev # rubocop:disable Style/Documentation
       {
         project_id: @project_id,
         requested_at: @time_stamp,
+        service_key: @service_key,
         method: @method,
         path: @path,
         query: @query,
         cookie: @cookie,
         request_id: @request_id,
         status: @status,
-        header: @headers,
-        service_key: @service_key,
-        body: @body
+        header: @request_headers, # TODO: change key name to request_headers
+        body: @request_body, # TODO: change key name to request_body
+        response_headers: @response_headers,
+        response_body: @response_body
       }.to_json
     end
     # rubocop:enable Metrics/MethodLength
@@ -83,14 +85,16 @@ module BuuurstDev # rubocop:disable Style/Documentation
       @method = env['REQUEST_METHOD']
       @query = Rack::Utils.parse_nested_query(env['QUERY_STRING'])
       @cookie = Rack::Utils.parse_cookies(env)
-      get_header(env)
+      get_request_header(env)
       @request_id = env['HTTP_X_REQUEST_ID']
       get_request_body(env)
     end
 
-    def get_response_log(status, headers, _body)
+    def get_response_log(status, headers, body)
       @request_id ||= headers['X-Request-Id']
       @status = status
+      @response_headers = headers # TODO: convert header?
+      get_response_body(body)
     end
 
     private
@@ -107,13 +111,13 @@ module BuuurstDev # rubocop:disable Style/Documentation
       @enable_path = !@ignore_paths.include?(@path)
     end
 
-    def get_header(env)
+    def get_request_header(env)
       @http_header_hash = {}
       @cgi_header_hash = {}
       create_header_mapping_hash
-      @headers = env.select { |k, _v| k.start_with?('HTTP_') || @cgi_header_hash.keys.include?(k) }
+      @request_headers = env.select { |k, _v| k.start_with?('HTTP_') || @cgi_header_hash.keys.include?(k) }
       header_convert_hash = @http_header_hash.merge(@cgi_header_hash)
-      @headers.transform_keys! { |k| header_convert_hash.include?(k) ? header_convert_hash[k] : k }
+      @request_headers.transform_keys! { |k| header_convert_hash.include?(k) ? header_convert_hash[k] : k }
     end
 
     def create_header_mapping_hash
@@ -132,8 +136,18 @@ module BuuurstDev # rubocop:disable Style/Documentation
 
     def get_request_body(env)
       input = env['rack.input']
-      @body = input.gets
+      @request_body = input.gets
       input.rewind
+    end
+
+    def get_response_body(body)
+      @response_body = parse_json_string(body.join)
+    end
+
+    def parse_json_string(str)
+      JSON.parse(str)
+    rescue JSON::ParserError
+      str
     end
   end
 end
