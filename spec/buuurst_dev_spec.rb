@@ -205,7 +205,7 @@ RSpec.describe BuuurstDev do
     BuuurstDev.configuration.service_key = nil
   end
 
-  it 'get response log at GET' do
+  it 'get response log with string array body at GET' do
     collector = app
     uuid = SecureRandom.uuid
     status = 200
@@ -224,8 +224,37 @@ RSpec.describe BuuurstDev do
         </body>
       </html>
     HTML
-    body = Rack::BodyProxy.new([body_str])
+    body = [body_str]
     collector.get_response_log(status, headers, body)
+
+    expect(collector.instance_variable_get('@request_id')).to eq uuid
+    expect(collector.instance_variable_get('@status')).to eq status
+    expect(collector.instance_variable_get('@response_headers')).to include(
+      'X-Request-Id' => uuid
+    )
+    expect(collector.instance_variable_get('@response_body')).to eq body_str
+  end
+
+  it 'get response log with string body at GET' do
+    collector = app
+    uuid = SecureRandom.uuid
+    status = 200
+    headers = {
+      'CONTENT_TYPE' => 'application/json',
+      'X-Request-Id' => uuid
+    }
+    body_str = <<~HTML
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Test</title>
+        </head>
+        <body>
+          <h1>Hello, world!</h1>
+        </body>
+      </html>
+    HTML
+    collector.get_response_log(status, headers, body_str)
 
     expect(collector.instance_variable_get('@request_id')).to eq uuid
     expect(collector.instance_variable_get('@status')).to eq status
