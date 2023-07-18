@@ -41,36 +41,9 @@ module BuuurstDev # rubocop:disable Style/Documentation
       status, headers, body = @app.call(env)
 
       if @enable && enable_path?
-        # https://github.com/rack/rack/blob/v3.0.8/SPEC.rdoc#label-Enumerable+Body
-        #   If the Body responds to to_ary, it must return an Array whose contents
-        #   are identical to that produced by calling each. Middleware may call to_ary
-        #   directly on the Body and return a new Body in its place. In other words,
-        #   middleware can only process the Body directly if it responds to to_ary.
-        #   If the Body responds to both to_ary and close, its implementation of
-        #   to_ary must call close.
-        #
-        # @seealso Rack::ContentLength middleware
-        # https://github.com/rack/rack/blob/v3.0.8/lib/rack/content_length.rb
-        if body.respond_to?(:to_ary)
-          body = body.to_ary
-          get_response_log(status, headers, body)
-        else
-          # for plain string wrapped by Rack::BodyProxy
-          inner_body = body
-          while inner_body.respond_to?(:body) do
-            inner_body = inner_body.body
-          end
-
-          if inner_body.instance_of?(String)
-            get_response_log(status, headers, inner_body)
-          else
-            get_response_log(status, headers, nil)
-          end
-        end
-
+        body = handle_response(status, headers, body)
         send_log
       end
-
       [status, headers, body]
     end
 
@@ -84,7 +57,6 @@ module BuuurstDev # rubocop:disable Style/Documentation
       http.post(url.path, param, req_header)
     end
 
-    # rubocop:disable Metrics/MethodLength
     def create_param_json
       {
         project_id: @project_id,
@@ -102,7 +74,6 @@ module BuuurstDev # rubocop:disable Style/Documentation
         response_body: @response_body
       }.to_json
     end
-    # rubocop:enable Metrics/MethodLength
 
     def get_request_path(env)
       @path = env['PATH_INFO']
@@ -166,6 +137,37 @@ module BuuurstDev # rubocop:disable Style/Documentation
       input = env['rack.input']
       @request_body = input.gets
       input.rewind
+    end
+
+    def handle_response(status, headers, body)
+      new_body = body
+
+      # https://github.com/rack/rack/blob/v3.0.8/SPEC.rdoc#label-Enumerable+Body
+      #   If the Body responds to to_ary, it must return an Array whose contents
+      #   are identical to that produced by calling each. Middleware may call to_ary
+      #   directly on the Body and return a new Body in its place. In other words,
+      #   middleware can only process the Body directly if it responds to to_ary.
+      #   If the Body responds to both to_ary and close, its implementation of
+      #   to_ary must call close.
+      #
+      # @seealso Rack::ContentLength middleware
+      # https://github.com/rack/rack/blob/v3.0.8/lib/rack/content_length.rb
+      if body.respond_to?(:to_ary)
+        new_body = body.to_ary
+        get_response_log(status, headers, new_body)
+      else
+        # for plain string wrapped by Rack::BodyProxy
+        inner_body = body
+        inner_body = inner_body.body while inner_body.respond_to?(:body)
+
+        if inner_body.instance_of?(String)
+          get_response_log(status, headers, inner_body)
+        else
+          get_response_log(status, headers, nil)
+        end
+      end
+
+      new_body
     end
 
     def get_response_body(body)
