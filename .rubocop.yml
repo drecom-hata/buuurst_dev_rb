@@ -2,8 +2,29 @@ AllCops:
   TargetRubyVersion: 2.6
   NewCops: enable
 
+# * 警告 120文字
+# * 禁止 160文字
+# のイメージ
 Layout/LineLength:
-  Max: 120
+  Max: 160
 
+# 30 まではギリギリ許せる範囲だったけど
+# リリースごとに 3 ずつぐらい下げていきます。20 まで下げたい。
+Metrics/AbcSize:
+  Max: 24
+
+# 余計なクラス分割の方がよくない
 Metrics/ClassLength:
-  Max: 150
+  Enabled: false
+
+# 6 は強すぎるので緩める
+Metrics/CyclomaticComplexity:
+  Max: 10
+
+# 20 行超えるのは migration ファイル以外滅多に無い
+Metrics/MethodLength:
+  Max: 20
+
+# 分岐の数。ガード句を多用しているとデフォルト 7 だと厳しい
+Metrics/PerceivedComplexity:
+  Max: 8
